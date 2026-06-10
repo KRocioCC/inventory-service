@@ -11,7 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class inventory {
+public class Inventory {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String sku;
