@@ -1,6 +1,5 @@
 package com.ecommerce.inventory_service.exception;
 
-import ch.qos.logback.classic.util.LogbackMDCAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -14,63 +13,82 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
 @RestControllerAdvice
+@Slf4j
 public class GlobalControllerAdvice {
 
-    // Para manejar errores de recursos no encontrados
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ProblemDetail handleResourceNotFoundException(ResourceNotFoundException EX, WebRequest request) {
+    public ProblemDetail handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request){
 
-        log.warn("Resource not found: {}", EX.getMessage());
+        log.warn("Recurso no encontrado - Path: {}, Message: {}",
+                request.getDescription(false), ex.getMessage());
 
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, EX.getMessage());
-        problemDetail.setTitle("Resource Not Found");
-        problemDetail.setDetail(EX.getMessage());
-        problemDetail.setType(URI.create("http://api.ecommerce.com/errors/not-found"));
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+
+        problemDetail.setTitle("Recurso no encontrado");
+        problemDetail.setType(URI.create("https://api.ecommerce.com/errors/not-found"));
         problemDetail.setProperty("Timestamp", Instant.now());
 
-        problemDetail.setProperty("Resource Name", EX.getResourceName());
-        problemDetail.setProperty("Field Name", EX.getFieldName());
-        problemDetail.setProperty("Field Value", EX.getFieldValue());
+        problemDetail.setProperty("Resource", ex.getResourceName());
+        problemDetail.setProperty("Field", ex.getFieldName());
+        problemDetail.setProperty("Value", ex.getFieldValue());
 
         return problemDetail;
     }
 
-    // Para manejar errores de validacin de campos en las solicitudes
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleMethodArgumentNotValidException(MethodArgumentNotValidException EX) {
+    public ProblemDetail handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "La validación falló en uno o mas campos"
+        );
 
-        log.error("Validation error: {}", EX.getMessage(), EX);
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for one or more fields.");
-
-        problemDetail.setTitle("Validation Error");
-        problemDetail.setType(URI.create("http://api.ecommerce.com/errors/validation-error"));
+        problemDetail.setTitle("Error de validación");
+        problemDetail.setType(URI.create("https://api.ecommerce.com/errors/error-validation"));
         problemDetail.setProperty("Timestamp", Instant.now());
 
         Map<String, String> errorMap = new HashMap<>();
 
-        // Recorremos los errores y los vamos metiendo al mismo mapa
-        EX.getBindingResult().getFieldErrors().forEach(fieldError -> {
-            errorMap.put(fieldError.getField(), fieldError.getDefaultMessage());
-        });
+        ex.getBindingResult().getFieldErrors().forEach(
+                error -> {
+                    errorMap.put(error.getField(), error.getDefaultMessage());
+                }
+        );
+
         problemDetail.setProperty("errors", errorMap);
 
         return problemDetail;
     }
 
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGenericException(Exception EX) {
+    public ProblemDetail handleException(Exception ex, WebRequest request){
 
-        log.error("An unexpected error occurred: {}", EX.getMessage(), EX);
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
+
+        log.error("A ocurrido un error inesperado {}:  {}",
+                request.getDescription(false), ex.getMessage(), ex);
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "A ocurrido un error inesperado. Por favor, contactar con el administrador"
+        );
 
         problemDetail.setTitle("Internal Server Error");
-        problemDetail.setType(URI.create("http://api.ecommerce.com/errors/internal-server-error"));
+        problemDetail.setType(URI.create("https://api.ecommerce.com/errors/internal"));
         problemDetail.setProperty("Timestamp", Instant.now());
 
         return problemDetail;
+
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
-
-
