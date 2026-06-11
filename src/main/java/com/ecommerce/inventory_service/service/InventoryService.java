@@ -11,4 +11,7 @@ public interface InventoryService {
     List<InventoryResponseDTO> getAllInventory();
     InventoryResponseDTO updateInventory(Long id, InventoryRequestDTO inventoryRequest);
     void deleteInventory(Long id);
+
+    //metodo para actualizar el stock de un producto (reducir)
+    void reduceStock(String sku, Integer quantity);
 }
