@@ -55,6 +55,13 @@ public class InventoryController {
     @PutMapping("/reduce/{sku}")
     @ResponseStatus(HttpStatus.OK)
     public String reduceStock(@PathVariable String sku, @RequestParam Integer quantity){
+
+        try{
+            System.out.println("::: INVENTORY SE DURMIO POR 5 SESGUNDOS..");
+            Thread.sleep(5000);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
         inventoryService.reduceStock(sku, quantity);
         return "stock reducido exitosamente";
     }
